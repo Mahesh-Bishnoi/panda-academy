@@ -11,7 +11,7 @@ public class SpringSecurityConfig {
     public SecurityFilterChain web(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(
-                        authorize -> authorize.requestMatchers("/api/**").authenticated())
+                        authorize -> authorize.requestMatchers("/api/**").permitAll())
                 .authorizeHttpRequests(
                         authorize -> authorize.requestMatchers("/**").permitAll()
                 );

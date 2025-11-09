@@ -1,3 +1,8 @@
 spring:
   application:
     name: academy
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:panda_academy.sqlite
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
