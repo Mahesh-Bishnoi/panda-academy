@@ -1,6 +1,6 @@
 import {useEffect, useState, Fragment} from 'react';
 import { apiService } from './api/apiService';
-import type { Schedule, TimeSlot } from './types';
+import type {ScheduleGenerationResult, TimeSlot} from './types';
 
 const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 const timeSlots: Omit<TimeSlot, 'id' | 'dayOfWeek'>[] = [
@@ -14,7 +14,13 @@ const timeSlots: Omit<TimeSlot, 'id' | 'dayOfWeek'>[] = [
 ];
 
 const ScheduleView = () => {
-    const [schedule, setSchedule] = useState<Schedule[]>([]);
+    const [scheduleResult, setScheduleResult] = useState<ScheduleGenerationResult>({
+        schedules: [],
+        failedCourses: {},
+        remainingTeacherAvailability: {},
+        remainingClassroomAvailability: {},
+        teacherDailyHours: {}
+    });
     const [loading, setLoading] = useState(false);
     const [semesterId, setSemesterId] = useState(1); // Default to semester 1
     const [semesters, setSemesters] = useState<{ id: number; name: string ; year: number}[]>([]);
@@ -24,7 +30,6 @@ const ScheduleView = () => {
         const fetchSemesters = async () => {
             try {
                 const semestersData = await apiService.getSemesters();
-                console.log('Fetched semesters:', semestersData);
                 setSemesters(semestersData);
                 if (semestersData.length > 0) {
                     setSemesterId(semestersData[0].id);
@@ -40,8 +45,7 @@ const ScheduleView = () => {
         setLoading(true);
         try {
             const newSchedule = await apiService.generateSchedule(semesterId);
-            console.log(newSchedule);
-            setSchedule(newSchedule);
+            setScheduleResult(newSchedule);
         } catch (error) {
             console.error('Error generating schedule:', error);
         }
@@ -49,7 +53,7 @@ const ScheduleView = () => {
     };
 
     const getScheduleForCell = (day: string, timeSlot: Omit<TimeSlot, 'id' | 'dayOfWeek'>) => {
-        return schedule.filter(item =>
+        return scheduleResult.schedules.filter(item =>
             item.timeSlot.dayOfWeek === day &&
             item.timeSlot.startTime === timeSlot.startTime
         );
@@ -101,6 +105,61 @@ const ScheduleView = () => {
                     </Fragment>
                 ))}
             </div>
+            {/* Failed Courses Section */}
+            {!loading && Object.keys(scheduleResult.failedCourses).length > 0 && (
+                <div className="failed-courses">
+                    <h3>⚠️ Failed Courses</h3>
+                    <ul>
+                        {Object.entries(scheduleResult.failedCourses).map(([course, reason]) => (
+                            <li key={course}>
+                                <strong>{course}</strong>: {reason}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* Remaining Availability Section */}
+            {!loading && (Object.keys(scheduleResult.remainingClassroomAvailability).length > 0 || Object.keys(scheduleResult.remainingTeacherAvailability).length > 0) && (
+                <div className="availability-section">
+                    <h3>📊 Remaining Availability</h3>
+
+                    <div className="availability-grid">
+                        <div>
+                            <h4>Teachers</h4>
+                            <ul>
+                                {Object.entries(scheduleResult.remainingTeacherAvailability).map(([teacher, slots]) => (
+                                    <li key={teacher}>
+                                        {teacher}: {slots} slot{slots !== 1 && 's'} left
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4>Classrooms</h4>
+                            <ul>
+                                {Object.entries(scheduleResult.remainingClassroomAvailability).map(([room, slots]) => (
+                                    <li key={room}>
+                                        {room}: {slots} slot{slots !== 1 && 's'} left
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4>Teacher Daily Hours</h4>
+                            <ul>
+                                {Object.entries(scheduleResult.teacherDailyHours).map(([teacher, hours]) => (
+                                    <li key={teacher}>
+                                        {teacher}: {hours} hour{hours !== 1 && 's'}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,10 +1,12 @@
 package com.panda.academy.service.impl;
 
 import com.panda.academy.dto.ScheduleDto;
+import com.panda.academy.dto.ScheduleGenerationResultDto;
 import com.panda.academy.entity.*;
 import com.panda.academy.mapper.ScheduleMapper;
 import com.panda.academy.repository.*;
 import com.panda.academy.service.ScheduleService;
+import com.panda.academy.utility.SchedulingReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     private static final int MAX_HOURS_PER_DAY = 4;
     private static final int STUDENTS_PER_SECTION = 10;
-    private static final double STUDENT_MULTIPLIER = 1.2; // // Assuming 80% pass rate, 120% students would want to take a course each year
+    private static final double STUDENT_MULTIPLIER = 1; // Assuming 100% pass rate
 
     private final CourseRepository courseRepository;
     private final TeacherRepository teacherRepository;
@@ -29,9 +31,10 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final SemesterRepository semesterRepository;
     private final StudentRepository studentRepository;
     private final ScheduleMapper scheduleMapper;
+    private final SchedulingReport report;
 
     @Override
-    public List<ScheduleDto> generateSchedule(Long semesterId) {
+    public ScheduleGenerationResultDto generateSchedule(Long semesterId) {
         Semester semester = semesterRepository.findById(semesterId)
                 .orElseThrow(() -> new RuntimeException("Semester not found"));
 
@@ -40,7 +43,17 @@ public class ScheduleServiceImpl implements ScheduleService {
         List<Schedule> generatedSchedules = scheduleCourseSections(semester);
 
         scheduleRepository.saveAll(generatedSchedules);
-        return generatedSchedules.stream().map(scheduleMapper::toDto).toList();
+        List<ScheduleDto> scheduleDtoList = generatedSchedules.stream()
+                .map(scheduleMapper::toDto)
+                .toList();
+
+        return ScheduleGenerationResultDto.builder()
+                .schedules(scheduleDtoList)
+                .failedCourses(report.getFailedCourses())
+                .remainingTeacherAvailability(report.getRemainingTeacherSlots())
+                .remainingClassroomAvailability(report.getRemainingClassroomSlots())
+                .teacherDailyHours(report.getTeacherDailyHours())
+                .build();
     }
 
     private void clearExistingSchedules(Semester semester) {
@@ -61,7 +74,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         Map<Teacher, Set<TimeSlot>> teacherAvailability = initializeTeacherAvailability(teachers, timeSlots);
         Map<Classroom, Set<TimeSlot>> classroomAvailability = initializeClassroomAvailability(classrooms, timeSlots);
         Map<Teacher, Map<DayOfWeek, Integer>> teacherDailyHours = initializeTeacherDailyHours(teachers);
-        // Assuming 80% pass rate, 120% students would want to take a course each year
+
         int sectionsPerCourse = calculateSectionsPerCourse();
 
         List<Schedule> schedules = new ArrayList<>();
@@ -83,10 +96,15 @@ public class ScheduleServiceImpl implements ScheduleService {
                 );
 
                 if (!scheduled) {
+                    report.recordFailure(course, "Unable to find matching time slots (section " + sectionIndex + ")");
                     log.warn("Unable to schedule section {} for course {}", sectionIndex, course.getName());
                 }
             }
         }
+        // Record remaining availability
+        report.recordRemainingAvailability(teacherAvailability, classroomAvailability, teacherDailyHours);
+        report.logSummary();
+
         return schedules;
     }
 
@@ -136,25 +154,42 @@ public class ScheduleServiceImpl implements ScheduleService {
     ) {
         for (Teacher teacher : teachers) {
             for (Classroom classroom : classrooms) {
+                Set<TimeSlot> teacherSlots = teacherAvailability.get(teacher);
+                Set<TimeSlot> classroomSlots = classroomAvailability.get(classroom);
 
-                List<TimeSlot> commonTimeSlots = new ArrayList<>(teacherAvailability.get(teacher));
-                commonTimeSlots.retainAll(classroomAvailability.get(classroom));
+                if (teacherSlots.isEmpty()) {
+                    log.debug("Teacher {} has no available slots left", teacher.getEmail());
+                    continue;
+                }
+                if (classroomSlots.isEmpty()) {
+                    log.debug("Classroom {} has no available slots left", classroom.getName());
+                    continue;
+                }
 
-                if (commonTimeSlots.size() < course.getHoursPerWeek()) continue;
+                List<TimeSlot> commonSlots = new ArrayList<>(teacherSlots);
+                commonSlots.retainAll(classroomSlots);
 
-                List<TimeSlot> selectedSlots = findContiguousTimeSlots(commonTimeSlots, course.getHoursPerWeek());
+                if (commonSlots.size() < course.getHoursPerWeek()) continue;
+
+                List<TimeSlot> selectedSlots = findContiguousTimeSlots(commonSlots, course.getHoursPerWeek());
                 if (selectedSlots.isEmpty()) continue;
 
+                Map<DayOfWeek,Integer> slotSum = new EnumMap<>(DayOfWeek.class);
+                selectedSlots.forEach(
+                        s -> slotSum.put(s.getDayOfWeek(),slotSum.getOrDefault(s.getDayOfWeek(),0) + 1)
+                );
                 boolean canSchedule = selectedSlots.stream().allMatch(slot ->
-                        teacherDailyHours.get(teacher).get(slot.getDayOfWeek()) + 1 <= MAX_HOURS_PER_DAY
+                        teacherDailyHours.get(teacher).get(slot.getDayOfWeek()) + slotSum.get(slot.getDayOfWeek()) <= MAX_HOURS_PER_DAY
                 );
 
-                if (!canSchedule) continue;
+                if (!canSchedule) {
+                    log.debug("Teacher {} exceeds daily hour limit for course {}", teacher.getEmail(), course.getName());
+                    continue;
+                }
 
-                createScheduleEntries(
-                        semester, course, teacher, classroom, selectedSlots,
-                        teacherAvailability, classroomAvailability, teacherDailyHours, schedules
-                );
+                createScheduleEntries(semester, course, teacher, classroom, selectedSlots,
+                        teacherAvailability, classroomAvailability, teacherDailyHours, schedules);
+
                 return true;
             }
         }

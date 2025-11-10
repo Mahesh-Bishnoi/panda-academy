@@ -1,9 +1,9 @@
 package com.panda.academy.service;
 
-import com.panda.academy.dto.ScheduleDto;
+import com.panda.academy.dto.ScheduleGenerationResultDto;
 
 import java.util.List;
 
 public interface ScheduleService {
-    List<ScheduleDto> generateSchedule(Long semesterId);
+    ScheduleGenerationResultDto generateSchedule(Long semesterId);
 }

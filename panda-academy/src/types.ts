@@ -38,3 +38,11 @@ export interface Schedule {
     timeSlot: TimeSlot;
     semester: Semester;
 }
+
+export interface ScheduleGenerationResult {
+    schedules: Schedule[];
+    failedCourses: Record<string, string>;                  // courseName → failure reason
+    remainingTeacherAvailability: Record<string, number>;   // teacherName → remaining slots
+    remainingClassroomAvailability: Record<string, number>; // classroomName → remaining slots
+    teacherDailyHours: Record<string, number>; // classroomName → remaining slots
+}

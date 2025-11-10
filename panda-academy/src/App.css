@@ -29,6 +29,9 @@ header h1 {
     left: 10px
 }
 
+button {
+    margin: 0.5em;
+}
 .schedule-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr); /* 5 days + 1 time column */
@@ -46,6 +49,29 @@ header h1 {
     border: 1px solid #ccc;
     padding: 10px;
     min-height: 100px;
+}
+
+.failed-courses {
+    margin-top: 30px;
+    border: 1px solid #ffeeba;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.availability-section {
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ffeeba;
+    border-radius: 5px;
+}
+
+.availability-grid {
+    display: flex;
+    gap: 40px;
+}
+
+.availability-grid h4 {
+    margin-bottom: 10px;
 }
 
 .day-header {

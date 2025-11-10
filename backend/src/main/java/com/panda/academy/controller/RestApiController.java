@@ -1,6 +1,6 @@
 package com.panda.academy.controller;
 
-import com.panda.academy.dto.ScheduleDto;
+import com.panda.academy.dto.ScheduleGenerationResultDto;
 import com.panda.academy.dto.SemesterDto;
 import com.panda.academy.mapper.SemesterMapper;
 import com.panda.academy.repository.SemesterRepository;
@@ -25,7 +25,7 @@ public class RestApiController {
     }
 
     @PostMapping("/schedules/generate/{semesterId}")
-    public ResponseEntity<List<ScheduleDto>> generateSchedule(@PathVariable Long semesterId) {
+    public ResponseEntity<ScheduleGenerationResultDto> generateSchedule(@PathVariable Long semesterId) {
         return ResponseEntity.ok(scheduleService.generateSchedule(semesterId));
     }
 }
