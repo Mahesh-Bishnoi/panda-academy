@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -29,8 +31,9 @@ public class Classroom {
     @Column(name = "name", length = 20, nullable = false, unique = true)
     private String name;
 
-    @Column(name = "room_type_id", nullable = false)
-    private Integer roomTypeId;
+    @ManyToOne
+    @JoinColumn(name = "room_type_id", nullable = false)
+    private RoomType roomType;
 
     @Column(name = "capacity")
     // Maps to INTEGER DEFAULT 10 CHECK (capacity <= 10)

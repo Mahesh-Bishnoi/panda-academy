@@ -1,13 +1,13 @@
 package com.panda.academy.controller;
 
-import com.panda.academy.dto.TeacherDto;
-import com.panda.academy.repository.StudentRepository;
-import com.panda.academy.repository.TeacherRepository;
+import com.panda.academy.dto.ScheduleDto;
+import com.panda.academy.dto.SemesterDto;
+import com.panda.academy.mapper.SemesterMapper;
+import com.panda.academy.repository.SemesterRepository;
+import com.panda.academy.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,11 +15,17 @@ import java.util.List;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class RestApiController {
-    private final TeacherRepository teacherRepository;
-    private final StudentRepository studentRepository;
+    private final SemesterRepository semesterRepository;
+    private final SemesterMapper semesterMapper;
+    private final ScheduleService scheduleService;
 
-    @GetMapping("/teachers")
-    public ResponseEntity<List<TeacherDto>> teachers(){
-        return ResponseEntity.ok(teacherRepository.findAll().stream().map(TeacherDto::fromEntity).toList());
+    @GetMapping("/semesters")
+    public ResponseEntity<List<SemesterDto>> semesters(){
+        return ResponseEntity.ok(semesterRepository.findAll().stream().map(semesterMapper::semesterToSemesterDto).toList());
+    }
+
+    @PostMapping("/schedules/generate/{semesterId}")
+    public ResponseEntity<List<ScheduleDto>> generateSchedule(@PathVariable Long semesterId) {
+        return ResponseEntity.ok(scheduleService.generateSchedule(semesterId));
     }
 }

@@ -1,15 +1,21 @@
+import type {Schedule, Semester} from '../types';
 import axios from 'axios';
-import type {Section} from '../types';
 
-const api = axios.create({
+const apiClient = axios.create({
     baseURL: '/api',
 });
 
-// === Challenge 1: Admin API ===
-export const generateSchedule = (semesterId: number) => {
-    return api.post(`/admin/schedule/generate?semesterId=${semesterId}`);
+const getSemesters = async (): Promise<Semester[]> => {
+    const response = await apiClient.get<Semester[]>('/semesters');
+    return response.data;
+}
+
+const generateSchedule = async (semesterId: number): Promise<Schedule[]> => {
+    const response = await apiClient.post(`/schedules/generate/${semesterId}`);
+    return response.data;
 };
 
-export const getMasterSchedule = (semesterId: number) => {
-    return api.get<Section[]>(`/admin/schedule?semesterId=${semesterId}`);
+export const apiService = {
+    getSemesters,
+    generateSchedule,
 };

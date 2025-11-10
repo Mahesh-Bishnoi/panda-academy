@@ -62,9 +62,9 @@ public class Course {
 
     // Maps to course_type VARCHAR(20) NOT NULL CHECK (course_type IN ('core', 'elective'))
     // EnumType.STRING is used to store 'CORE' or 'ELECTIVE' instead of a fragile ordinal number.
-    @Enumerated(EnumType.STRING)
     @Column(name = "course_type", length = 20, nullable = false)
     @NotNull
+    @Convert(converter = CourseTypeConverter.class)
     private CourseType courseType;
 
     // Maps to grade_level_min INTEGER CHECK (grade_level_min BETWEEN 9 AND 12)

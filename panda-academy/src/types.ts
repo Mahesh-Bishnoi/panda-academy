@@ -1,24 +1,40 @@
-/**
- * Represents a single time block for a section.
- * Matches the backend ScheduleSlotDto.
- */
-export interface ScheduleSlot {
-    dayOfWeek: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
-    startTime: string; // e.g., "09:00"
-    endTime: string;   // e.g., "10:00"
+export interface Course {
+    id: number;
+    code: string;
+    name: string;
+    credits: number;
+    hoursPerWeek: number;
 }
 
-/**
- * Represents a full section in the master schedule.
- * Matches the backend SectionDto.
- */
-export interface Section {
-    sectionId: number;
-    courseCode: string;
-    courseName: string;
-    teacherName: string;
-    roomName: string;
-    capacity: number;
-    enrolledCount: number;
-    slots: ScheduleSlot[];
+export interface Teacher {
+    id: number;
+    firstName: string;
+    lastName: string;
+}
+
+export interface Classroom {
+    id: number;
+    name: string;
+}
+
+export interface TimeSlot {
+    id: number;
+    dayOfWeek: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+    startTime: string; // e.g., "09:00:00"
+    endTime: string;   // e.g., "10:00:00"
+}
+
+export interface Semester {
+    id: number;
+    name: string;
+    year: number;
+}
+
+export interface Schedule {
+    id: number;
+    course: Course;
+    teacher: Teacher;
+    classroom: Classroom;
+    timeSlot: TimeSlot;
+    semester: Semester;
 }

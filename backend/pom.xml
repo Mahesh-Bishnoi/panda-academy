@@ -11,7 +11,7 @@
     <groupId>com.panda</groupId>
     <artifactId>academy</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>academy</name>
+    <name>panda-academy</name>
     <description>Panda academy</description>
     <url/>
     <licenses>
@@ -30,6 +30,7 @@
         <java.version>25</java.version>
         <sqlite-jdbc.version>3.51.0.0</sqlite-jdbc.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     </properties>
     <dependencies>
         <dependency>
@@ -68,7 +69,6 @@
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
-            <scope>compile</scope>
             <version>${mapstruct.version}</version>
         </dependency>
 
@@ -78,12 +78,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <!--<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-docker-compose</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
@@ -92,6 +86,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -140,7 +135,24 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
                         </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
                     </annotationProcessorPaths>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <arg>
+                            -Amapstruct.defaultComponentModel=spring
+                        </arg>
+                        <arg>
+                            -Amapstruct.verbose=true
+                        </arg>
+                        <arg>
+                            -Amapstruct.defaultInjectionStrategy=constructor
+                        </arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
